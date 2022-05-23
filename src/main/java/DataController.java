@@ -12,6 +12,7 @@ import java.util.Properties;
 public class DataController {
 
 	private CachedRowSet cachedRowSet;
+	private DataPanel dataPanel;
 	private Connection connection;
 
 	DataController() {
@@ -29,7 +30,7 @@ public class DataController {
 	/**
 	 * Moves to the previous table row.
 	 */
-	public void showPreviousRow(DataPanel dataPanel) {
+	public void showPreviousRow() {
 		System.out.println(Thread.currentThread().getId());
 		try {
 			if (cachedRowSet == null || cachedRowSet.isFirst()) return;
@@ -44,7 +45,7 @@ public class DataController {
 	/**
 	 * Moves to the next table row.
 	 */
-	public void showNextRow(DataPanel dataPanel) {
+	public void showNextRow() {
 		System.out.println(Thread.currentThread().getId());
 		try {
 			if (cachedRowSet == null || cachedRowSet.isLast()) return;
@@ -59,7 +60,7 @@ public class DataController {
 	/**
 	 * Deletes current table row.
 	 */
-	public void deleteRow(DataPanel dataPanel) {
+	public void deleteRow() {
 		if (cachedRowSet == null) return;
 		new SwingWorker<Void, Void>() {
 			public Void doInBackground() throws SQLException {
@@ -79,7 +80,7 @@ public class DataController {
 	/**
 	 * Saves all changes, in the background.
 	 */
-	public void saveChanges(DataPanel dataPanel) {
+	public void saveChanges() {
 		if (cachedRowSet == null) return;
 		new SwingWorker<Void, Void>() {
 			public Void doInBackground() throws SQLException {
@@ -91,18 +92,23 @@ public class DataController {
 		}.execute();
 	}
 
+	/**
+	 * @return The meta-data of the schema
+	 * @throws SQLException Cannot retrieve meta-data from the database
+	 */
 	public DatabaseMetaData getConnectionMetaData() throws SQLException {
 		return connection.getMetaData();
 	}
 
 	/**
 	 * Queries the database to get the rows in the selected table
+	 *
 	 * @param tableName the table to be shown
 	 * @return a cached copy of the result set
 	 */
 	public CachedRowSet getCachedRowSetOf(String tableName) throws SQLException {
 		try (Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
-		ResultSet result = statement.executeQuery("SELECT * FROM " + tableName)) {
+		     ResultSet result = statement.executeQuery("SELECT * FROM " + tableName)) {
 
 			RowSetFactory factory = RowSetProvider.newFactory();
 			cachedRowSet = factory.createCachedRowSet();
@@ -120,7 +126,7 @@ public class DataController {
 	}
 
 	public void closeConnection() throws SQLException {
-		if (connection!= null) connection.close();
+		if (connection != null) connection.close();
 	}
 
 	private void readDatabaseProperties() throws IOException {
@@ -148,5 +154,22 @@ public class DataController {
 		String username = System.getProperty("jdbc.username");
 		String password = System.getProperty("jdbc.password");
 		return DriverManager.getConnection(url, username, password);
+	}
+
+	public DataPanel getDataPanel() {
+		return dataPanel;
+	}
+
+	/**
+	 * Shows the table of the passed name
+	 * @param tableName The table name
+	 */
+	public void viewTableOfName(String tableName) {
+		try (CachedRowSet cachedRowSet = getCachedRowSetOf(tableName)) {
+			dataPanel = new DataPanel(cachedRowSet);
+		} catch (SQLException sqlException) {
+			for (Throwable t : sqlException) t.printStackTrace();
+		}
+
 	}
 }

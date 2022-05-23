@@ -18,32 +18,54 @@ public class DataPanel extends JPanel {
 	 *
 	 * @param rowSet the result set whose contents this panel displays
 	 */
-	public DataPanel(RowSet rowSet) throws SQLException {
-		fields = new ArrayList<>();
+	public DataPanel(RowSet rowSet) {
 		setLayout(new GridBagLayout());
-		var gridBagConstraints = new GridBagConstraints();
-		gridBagConstraints.gridwidth = 1;
-		gridBagConstraints.gridheight = 1;
-
-		ResultSetMetaData resultSetMetaData = rowSet.getMetaData();
-		for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
-			gridBagConstraints.gridy = i - 1;
-			String columnName = resultSetMetaData.getColumnLabel(i);
-			gridBagConstraints.gridx = 0;
-			gridBagConstraints.anchor = GridBagConstraints.EAST;
-			add(new JLabel(columnName), gridBagConstraints);
-
-			int columnWidth = resultSetMetaData.getColumnDisplaySize(i);
-			var tb = new JTextField(columnWidth);
-			if (!resultSetMetaData.getColumnClassName(i).equals("java.lang.String"))
-				tb.setEditable(false);
-
-			fields.add(tb);
-
-			gridBagConstraints.gridx = 1;
-			gridBagConstraints.anchor = GridBagConstraints.WEST;
-			add(tb, gridBagConstraints);
+		fields = new ArrayList<>();
+		showLabels(rowSet);
+	}
+	/**
+	 * Shows all the columns labels
+	 *
+	 * @param rowSet the result set whose contents this panel displays
+	 */
+	private void showLabels(RowSet rowSet) {
+		try {
+			var gridBagConstraints = new GridBagConstraints();
+			var resultSetMetaData = rowSet.getMetaData();
+			for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
+				showColumnLabelAt(i, resultSetMetaData, gridBagConstraints);
+			}
+		} catch (SQLException sqlException) {
+			for (Throwable t : sqlException) {
+				t.printStackTrace();
+			}
 		}
+	}
+
+	/**
+	 * Shows the column at index i
+	 *
+	 * @param i the index of the column
+	 * @param resultSetMetaData the meta-data of the table
+	 * @param gridBagConstraints the constraints of the label position
+	 */
+	private void showColumnLabelAt(int i, ResultSetMetaData resultSetMetaData, GridBagConstraints gridBagConstraints) throws SQLException {
+		String columnName = resultSetMetaData.getColumnLabel(i);
+		int columnWidth = resultSetMetaData.getColumnDisplaySize(i);
+
+		gridBagConstraints.gridy = i - 1;
+		gridBagConstraints.gridx = 0;
+		gridBagConstraints.anchor = GridBagConstraints.EAST;
+		add(new JLabel(columnName), gridBagConstraints);
+
+		var tb = new JTextField(columnWidth);
+		if (!resultSetMetaData.getColumnClassName(i).equals("java.lang.String")) tb.setEditable(false);
+
+		gridBagConstraints.gridx = 1;
+		gridBagConstraints.anchor = GridBagConstraints.WEST;
+		add(tb, gridBagConstraints);
+
+		fields.add(tb);
 	}
 
 	/**

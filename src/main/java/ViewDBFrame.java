@@ -1,4 +1,3 @@
-import javax.sql.rowset.CachedRowSet;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
@@ -9,7 +8,6 @@ import java.sql.*;
  * The frame that holds the data panel and the navigation buttons.
  */
 public class ViewDBFrame extends JFrame {
-	private DataPanel dataPanel;
 	private Component scrollPane;
 	private final JComboBox<String> tableNames;
 	private final DataController dataController;
@@ -19,7 +17,7 @@ public class ViewDBFrame extends JFrame {
 		dataController = new DataController();
 
 		tableNames = new JComboBox<>();
-		populateTableNames();
+		setTableNames();
 		tableNames.addActionListener(event -> showTable((String) tableNames.getSelectedItem()));
 		add(tableNames, BorderLayout.NORTH);
 
@@ -30,28 +28,23 @@ public class ViewDBFrame extends JFrame {
 	}
 
 	/**
-	 * Prepares the text fields for showing a new table, and shows the first row.
+	 * Prepares the text fields for showing a new table then shows the first row.
 	 *
-	 * @param tableName  the name of the table to display
+	 * @param tableName the name of the table to display
 	 */
 	public void showTable(String tableName) {
-		try (CachedRowSet cachedRowSet = dataController.getCachedRowSetOf(tableName)) {
-			if (scrollPane != null) remove(scrollPane);
-			dataPanel = new DataPanel(cachedRowSet);
-			scrollPane = new JScrollPane(dataPanel);
-			add(scrollPane, BorderLayout.CENTER);
-			dataController.showNextRow(dataPanel);
-			pack();
-		} catch (SQLException ex) {
-			for (Throwable t : ex)
-				t.printStackTrace();
-		}
+		dataController.viewTableOfName(tableName);
+		if (scrollPane != null) remove(scrollPane);
+		scrollPane = new JScrollPane(dataController.getDataPanel());
+		add(scrollPane, BorderLayout.CENTER);
+		dataController.showNextRow();
+		pack();
 	}
 
 	/**
 	 * populates the combobox with the tables names
 	 */
-	private void populateTableNames() {
+	private void setTableNames() {
 		try {
 			DatabaseMetaData meta = dataController.getConnectionMetaData();
 			try (ResultSet metaResultSet = meta.getTables("TEST", null, null, new String[]{"TABLE"})) {
@@ -72,19 +65,19 @@ public class ViewDBFrame extends JFrame {
 		add(buttonPanel, BorderLayout.SOUTH);
 
 		JButton previousButton = new JButton("Previous");
-		previousButton.addActionListener(event -> dataController.showPreviousRow(dataPanel));
+		previousButton.addActionListener(event -> dataController.showPreviousRow());
 		buttonPanel.add(previousButton);
 
 		JButton nextButton = new JButton("Next");
-		nextButton.addActionListener(event -> dataController.showNextRow(dataPanel));
+		nextButton.addActionListener(event -> dataController.showNextRow());
 		buttonPanel.add(nextButton);
 
 		JButton deleteButton = new JButton("Delete");
-		deleteButton.addActionListener(event -> dataController.deleteRow(dataPanel));
+		deleteButton.addActionListener(event -> dataController.deleteRow());
 		buttonPanel.add(deleteButton);
 
 		JButton saveButton = new JButton("Save");
-		saveButton.addActionListener(event -> dataController.saveChanges(dataPanel));
+		saveButton.addActionListener(event -> dataController.saveChanges());
 		buttonPanel.add(saveButton);
 	}
 
