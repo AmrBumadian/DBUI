@@ -1,4 +1,5 @@
 import javax.sql.RowSet;
+import javax.sql.rowset.CachedRowSet;
 import javax.swing.*;
 import java.awt.*;
 import java.sql.ResultSet;
@@ -58,8 +59,7 @@ public class DataPanel extends JPanel {
 		gridBagConstraints.anchor = GridBagConstraints.EAST;
 		add(new JLabel(columnName), gridBagConstraints);
 
-		var tb = new JTextField(columnWidth);
-		if (!resultSetMetaData.getColumnClassName(i).equals("java.lang.String")) tb.setEditable(false);
+		var tb = new JTextField(Math.min(50, columnWidth));
 
 		gridBagConstraints.gridx = 1;
 		gridBagConstraints.anchor = GridBagConstraints.WEST;
@@ -95,5 +95,17 @@ public class DataPanel extends JPanel {
 				rowSet.updateString(i, tb.getText());
 		}
 		rowSet.updateRow();
+	}
+
+	/**
+	 * Inserts the values in the data panel to the rowset
+	 * @param rowSet the rowset pointing to the new empty row
+	 * @throws SQLException sqlException
+	 */
+	public void insert(RowSet rowSet) throws SQLException {
+		for (int i = 1; i <= fields.size(); i++) {
+			String value = fields.get(i - 1).getText();
+			rowSet.updateString(i, value);
+		}
 	}
 }

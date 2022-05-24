@@ -5,6 +5,7 @@ import javax.swing.*;
  * This program views arbitrary tables in a database and provide data manipulation options.
  *
  * @author Amr Bumadian
+ * @version 1.1 2022-05-24
  * @version 1.0 2022-03-30
  */
 public class ViewDB {

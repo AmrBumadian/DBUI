@@ -35,7 +35,7 @@ public class DataController {
 		try {
 			if (cachedRowSet == null || cachedRowSet.isFirst()) return;
 			cachedRowSet.previous();
-			dataPanel.showRow(cachedRowSet);
+			this.dataPanel.showRow(cachedRowSet);
 		} catch (SQLException sqlException) {
 			for (Throwable t : sqlException)
 				t.printStackTrace();
@@ -50,7 +50,7 @@ public class DataController {
 		try {
 			if (cachedRowSet == null || cachedRowSet.isLast()) return;
 			cachedRowSet.next();
-			dataPanel.showRow(cachedRowSet);
+			this.dataPanel.showRow(cachedRowSet);
 		} catch (SQLException sqlException) {
 			for (Throwable t : sqlException)
 				t.printStackTrace();
@@ -100,13 +100,17 @@ public class DataController {
 		return connection.getMetaData();
 	}
 
+	public CachedRowSet getCachedRowSet() {
+		return cachedRowSet;
+	}
+
 	/**
 	 * Queries the database to get the rows in the selected table
 	 *
 	 * @param tableName the table to be shown
 	 * @return a cached copy of the result set
 	 */
-	public CachedRowSet getCachedRowSetOf(String tableName) throws SQLException {
+	private CachedRowSet getCachedRowSetOf(String tableName) throws SQLException {
 		try (Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
 		     ResultSet result = statement.executeQuery("SELECT * FROM " + tableName)) {
 
@@ -157,19 +161,66 @@ public class DataController {
 	}
 
 	public DataPanel getDataPanel() {
-		return dataPanel;
+		return this.dataPanel;
 	}
 
 	/**
 	 * Shows the table of the passed name
+	 *
 	 * @param tableName The table name
 	 */
 	public void viewTableOfName(String tableName) {
 		try (CachedRowSet cachedRowSet = getCachedRowSetOf(tableName)) {
-			dataPanel = new DataPanel(cachedRowSet);
+			this.dataPanel = new DataPanel(cachedRowSet);
 		} catch (SQLException sqlException) {
 			for (Throwable t : sqlException) t.printStackTrace();
 		}
 
+	}
+
+	/**
+	 * inserts new row and reflects the changes to the database
+	 *
+	 * @param dataPanel the data panel containing the values of the new row
+	 */
+	public void insertNewRow(DataPanel dataPanel) {
+		if (cachedRowSet == null) return;
+		try {
+			dataPanel.insert(cachedRowSet);
+			cachedRowSet.insertRow();
+			cachedRowSet.moveToCurrentRow();
+			cachedRowSet.acceptChanges(connection);
+		} catch (SQLException sqlException) {
+			for (Throwable t : sqlException) {
+				t.printStackTrace();
+			}
+		}
+
+	}
+
+	/**
+	 * moves the cursor to the insert row
+	 */
+	public void prepareInsert() {
+		try {
+			cachedRowSet.moveToInsertRow();
+		} catch (SQLException sqlException) {
+			for (Throwable t : sqlException) {
+				t.printStackTrace();
+			}
+		}
+	}
+
+	/**
+	 * Returns the cursor to where it was before inserting a new row
+	 */
+	public void cancelInsert() {
+		try {
+			cachedRowSet.moveToCurrentRow();
+		} catch (SQLException sqlException) {
+			for (Throwable t : sqlException) {
+				t.printStackTrace();
+			}
+		}
 	}
 }
